@@ -23,18 +23,19 @@ class Level1 extends Phaser.Scene
         const tileset=map.addTilesetImage("colored_packed", "tiles");
         const floorLayer=map.createStaticLayer("Floor", tileset, 0, 0);
         const wallLayer=map.createStaticLayer("Walls", tileset, 0, 0);
-        const menuLayer=map.createStaticLayer("Menu", tileset, 0, 0);
+        this.menuLayer=map.createStaticLayer("Menu", tileset, 0, 0);
         const UILayer=map.createStaticLayer("UI", tileset, 0, 0);
 
-        //groundLayer.setCollisionByProperty({collides:true});
+        wallLayer.setCollisionByProperty({collides:true});
 
         this.cameras.main.setBounds(0, 16, map.widthInPixels, map.heightInPixels);
 
         // enable scene switcher / reload keys
         this.swap=this.input.keyboard.addKey('S');
         this.reload=this.input.keyboard.addKey('R');
-
-        
+        this.toggle=this.input.keyboard.addKey('T');
+        this.back=this.input.keyboard.addKey('B');
+        this.visible=true;
 
         this.endpoint=map.createFromObjects("Objects", "End",
         {
@@ -45,6 +46,33 @@ class Level1 extends Phaser.Scene
         this.endpoint.map((end)=>
         {
             end.body.setCircle(4).setOffset(4 ,4);
+        });
+
+        this.spawnpoint=map.createFromObjects("Objects", "Spawn Point",
+        {
+            key: "kenney_sheet",
+            frame: 401
+        }, this);
+        this.physics.world.enable(this.spawnpoint, Phaser.Physics.Arcade.STATIC_BODY);
+        this.spawnpoint.map((spawn)=>
+        {
+            spawn.body.setCircle(4).setOffset(4 ,4);
+        });
+
+        let enemyconfig=
+        {
+            runChildUpdate: true
+        }
+        this.enemies=this.add.group(enemyconfig);
+        this.spawnpoint.map((spawn)=>
+        {
+            let enemy = new Goblin(this, spawn.x, spawn.y, "kenney_sheet", 125);   
+            this.enemies.add(enemy);
+        });
+
+        this.physics.add.collider(this.enemies, wallLayer);
+        this.physics.add.overlap(this.endpoint, this.enemies, (obj1, obj2) => {
+            obj2.destroy(); // remove coin on overlap
         });
     }
 
@@ -58,6 +86,20 @@ class Level1 extends Phaser.Scene
         if(Phaser.Input.Keyboard.JustDown(this.swap))
         {
             this.scene.start("testScene");
+        }
+        if(Phaser.Input.Keyboard.JustDown(this.toggle)&&this.visible==true)
+        {
+            console.log(this.visible);
+            this.menuLayer.setAlpha(0);
+            this.visible=false;
+            console.log(this.visible);
+        }
+        else if(Phaser.Input.Keyboard.JustDown(this.back)&&this.visible==false)
+        {
+            console.log(this.visible);
+            this.menuLayer.setAlpha(1);
+            this.visible=true;
+            console.log(this.visible);
         }
     }
 }
